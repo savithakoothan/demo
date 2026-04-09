@@ -1,4 +1,4 @@
-name: Build and deploy to Azure
+name: Build and deploy Node.js app to Azure Web App
 
 on:
   push:
@@ -6,8 +6,7 @@ on:
       - main
 
 jobs:
-  # ─── Backend ───────────────────────────────────────────
-  deploy-backend:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,41 +16,13 @@ jobs:
         with:
           node-version: "22.x"
 
-      - name: Install dependencies & build
-        run: |
-          npm install
-          npm run build --if-present
-        working-directory: ./backend
+      - name: Install backend dependencies
+        run: npm install
+        working-directory: ./backend # ← only backend needs npm install
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: "demo-backend-123"
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ./backend
-
-  # ─── Frontend ──────────────────────────────────────────
-  deploy-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22.x"
-
-      - name: Install & build frontend
-        run: |
-          npm install
-          npm run build --if-present
-        working-directory: ./frontend # ← points to your frontend folder
-
-      - name: Deploy to Azure Static Web Apps
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: "upload"
-          app_location: "./frontend" # ← your frontend source folder
-          output_location: "dist" # ← build output folder (dist for Vite/React, build for CRA)
+          package: . # ← deploy entire repo (includes frontend folder)
